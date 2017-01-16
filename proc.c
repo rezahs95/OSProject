@@ -12,6 +12,45 @@ struct {
   struct proc proc[NPROC];
 } ptable;
 
+struct proc *runnableProcs[NPROC];
+int front = 0, rear = -1, items = 0;
+
+struct proc *getFront() {
+	return runnableProcs[front];
+}
+
+int getSize() {
+	return items;
+}
+
+int isEmpty() {	
+	if(items == 0)
+		return 1;
+	return 0;
+}
+int isFull() {
+	if(items == NPROC)
+		return 1;
+	return 0;
+}
+
+void addQ(struct proc *curProc) {
+	if(!isFull()) {
+		if( rear == NPROC - 1)
+			rear = -1;
+		rear++;
+		items++;
+		runnableProcs[rear] = curProc; 
+	}
+	return;
+}
+
+void removeQ() {
+	if(front == NPROC)
+		front = 0;
+	items--;
+}
+
 static struct proc *initproc;
 
 int nextpid = 1;
@@ -49,6 +88,8 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->ctime = ticks;
+  p->rtime = 0;
 
   release(&ptable.lock);
 
@@ -110,6 +151,8 @@ userinit(void)
   acquire(&ptable.lock);
 
   p->state = RUNNABLE;
+  if(SCHEDFLAG == FRR)	
+	addQ(p);
 
   release(&ptable.lock);
 }
@@ -174,6 +217,8 @@ fork(void)
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
+  if(SCHEDFLAG == FRR) 
+	addQ(np);
 
   release(&ptable.lock);
 
@@ -221,6 +266,7 @@ exit(void)
 
   // Jump into the scheduler, never to return.
   proc->state = ZOMBIE;
+  proc->etime = ticks;
   sched();
   panic("zombie exit");
 }
@@ -285,6 +331,27 @@ scheduler(void)
     // Enable interrupts on this processor.
     sti();
 
+    if(SCHEDFLAG == FRR && ticks % QUANTA == 0) 
+    {
+	struct proc *p;
+    	acquire(&ptable.lock);
+        if(!isEmpty())
+	{
+	      p = getFront();
+	      removeQ();
+	      proc = p;
+	      switchuvm(p);
+	      p->state = RUNNING;
+	      swtch(&cpu->scheduler, p->context);
+	      switchkvm();
+
+	      // Process is done running for now.
+	      // It should have changed its p->state before coming back.
+	      proc = 0;
+		
+	}
+        release(&ptable.lock);
+    }
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
@@ -294,16 +361,18 @@ scheduler(void)
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
-	
-      proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-      swtch(&cpu->scheduler, p->context);
-      switchkvm();
+	if (SCHEDFLAG == RR) 
+	{
+	      proc = p;
+	      switchuvm(p);
+	      p->state = RUNNING;
+	      swtch(&cpu->scheduler, p->context);
+	      switchkvm();
 
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      proc = 0;
+	      // Process is done running for now.
+	      // It should have changed its p->state before coming back.
+	      proc = 0;
+	}
     }
     release(&ptable.lock);
 
@@ -412,8 +481,12 @@ wakeup1(void *chan)
   struct proc *p;
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == SLEEPING && p->chan == chan)
+    if(p->state == SLEEPING && p->chan == chan) {
       p->state = RUNNABLE;
+	if(SCHEDFLAG == FRR)
+		addQ(p);
+	}
+	
 }
 
 // Wake up all processes sleeping on chan.
@@ -438,8 +511,11 @@ kill(int pid)
     if(p->pid == pid){
       p->killed = 1;
       // Wake process from sleep if necessary.
-      if(p->state == SLEEPING)
+      if(p->state == SLEEPING) {
         p->state = RUNNABLE;
+	if(SCHEDFLAG == FRR)
+		addQ(p);
+      }
       release(&ptable.lock);
       return 0;
     }

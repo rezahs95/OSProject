@@ -12,4 +12,8 @@
 #define NBUF         (MAXOPBLOCKS*3)  // size of disk block cache
 #define FSSIZE       1000  // size of file system in blocks
 #define QUANTA	     5
-#define SCHEDFLAG    RR
+#define SCHEDFLAG    2
+#define FRR	     2
+#define RR           1
+#define GRT          3
+#define QQQ	     4
