@@ -174,6 +174,7 @@ UPROGS=\
 	_wc\
 	_zombie\
 	_getPerformanceData\
+	_getppid\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

@@ -53,6 +53,14 @@ sys_getpid(void)
   return proc->pid;
 }
 
+int 
+sys_getppid(void)
+{
+   if(proc->parent == 0)
+	return (0);
+   return proc->parent->pid;
+}
+
 int
 sys_sbrk(void)
 {
