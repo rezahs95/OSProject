@@ -12,11 +12,13 @@ struct {
   struct proc proc[NPROC];
 } ptable;
 
-struct proc *runnableProcs[NPROC];
+const int inf = 10000000;
+
+struct proc *runnablProcs[NPROC];
 int front = 0, rear = -1, items = 0;
 
 struct proc *getFront() {
-	return runnableProcs[front];
+	return runnablProcs[front];
 }
 
 int getSize() {
@@ -38,17 +40,26 @@ void addQ(struct proc *curProc) {
 	if(!isFull()) {
 		if( rear == NPROC - 1)
 			rear = -1;
-		rear++;
+		runnablProcs[++rear] = curProc; 
 		items++;
-		runnableProcs[rear] = curProc; 
 	}
-	return;
 }
 
-void removeQ() {
-	if(front == NPROC)
-		front = 0;
-	items--;
+struct proc *removeQ() {
+    struct proc* cur = runnablProcs[front++];
+
+    if(front == NPROC){
+        front = 0;
+    }
+
+    items--;
+    return cur;
+}
+
+void printQ() {
+	int i = 0;
+	for(i = front;i <= rear; i++)
+		cprintf("%d ", runnablProcs[i]);
 }
 
 static struct proc *initproc;
@@ -149,11 +160,13 @@ userinit(void)
   // writes to be visible, and the lock is also needed
   // because the assignment might not be atomic.
   acquire(&ptable.lock);
+	cprintf("2");
 
   p->state = RUNNABLE;
-  if(SCHEDFLAG == FRR)	
+  if(SCHEDFLAG == FRR)	{
 	addQ(p);
 
+	cprintf("3");}
   release(&ptable.lock);
 }
 
@@ -217,9 +230,10 @@ fork(void)
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
-  if(SCHEDFLAG == FRR) 
+  if(SCHEDFLAG == FRR){ 
 	addQ(np);
-
+	//cprintf("6");
+}
   release(&ptable.lock);
 
   return pid;
@@ -314,6 +328,15 @@ wait(void)
   }
 }
 
+// calculates the formula given in the 3rd(GRT) algorithm
+double
+calculateProc(struct proc *p) 
+{
+	if(p->ctime == ticks)
+		return (double)inf;
+	return (p->rtime) / (ticks - p->ctime);
+}
+
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -331,14 +354,16 @@ scheduler(void)
     // Enable interrupts on this processor.
     sti();
 
-    if(SCHEDFLAG == FRR && ticks % QUANTA == 0) 
+   /* if(SCHEDFLAG == FRR) 
     {
+	//cprintf("hello");
 	struct proc *p;
-    	acquire(&ptable.lock);
         if(!isEmpty())
 	{
-	      p = getFront();
-	      removeQ();
+    		//acquire(&ptable.lock);
+		cprintf("5\n");
+	      p = removeQ();	
+		cprintf("%d\n", p->pid);
 	      proc = p;
 	      switchuvm(p);
 	      p->state = RUNNING;
@@ -350,19 +375,22 @@ scheduler(void)
 	      proc = 0;
 		
 	}
-        release(&ptable.lock);
-    }
+	//cprintf("motherfucker!");
+        //release(&ptable.lock);
+    }*/
     // Loop over process table looking for process to run.
-    acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE || ticks % QUANTA != 0)
-        continue;
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
+	//cprintf("4");
 	if (SCHEDFLAG == RR) 
 	{
+    		acquire(&ptable.lock);
+    			for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      				if(p->state != RUNNABLE || ticks % QUANTA != 0)
+        				continue;
+		cprintf("1");
 	      proc = p;
 	      switchuvm(p);
 	      p->state = RUNNING;
@@ -372,11 +400,55 @@ scheduler(void)
 	      // Process is done running for now.
 	      // It should have changed its p->state before coming back.
 	      proc = 0;
+		}
+		release(&ptable.lock);
 	}
-    }
-    release(&ptable.lock);
+	else if(SCHEDFLAG == FRR)
+	{
+    		acquire(&ptable.lock);
+    		for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      			if(p->state != RUNNABLE)
+        			continue;
 
-  }
+			if(!isEmpty() && p != getFront())
+				continue;
+
+	      proc = p;
+	      switchuvm(p);
+	      p->state = RUNNING;
+		removeQ();
+	      swtch(&cpu->scheduler, p->context);
+	      switchkvm();
+	      proc = 0;
+	}
+	release(&ptable.lock);
+    	}  
+	else if(SCHEDFLAG == QQQ) 
+	{	
+		struct proc *minProc;
+		double mn = 100000000;
+		for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+		{
+			if(p->state != RUNNABLE)
+				continue;
+			double tmp = calculateProc(p);
+			if(tmp < mn)
+			{
+				mn = tmp;
+				minProc = p;
+			}
+		}	
+		
+	      proc = minProc;
+	      switchuvm(minProc);
+	      minProc->state = RUNNING;
+	      swtch(&cpu->scheduler, minProc->context);
+	      switchkvm();
+	      proc = 0;
+		
+	}
+    //release(&ptable.lock);
+  } 
 }
 
 // Enter scheduler.  Must hold only ptable.lock
@@ -410,6 +482,11 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   proc->state = RUNNABLE;
+  if(SCHEDFLAG == FRR)
+{
+	addQ(proc);
+	//cprintf("7");
+}
   sched();
   release(&ptable.lock);
 }
@@ -483,8 +560,9 @@ wakeup1(void *chan)
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->state == SLEEPING && p->chan == chan) {
       p->state = RUNNABLE;
-	if(SCHEDFLAG == FRR)
-		addQ(p);
+	if(SCHEDFLAG == FRR){
+		cprintf("yes");
+		addQ(p);}
 	}
 	
 }
@@ -513,8 +591,9 @@ kill(int pid)
       // Wake process from sleep if necessary.
       if(p->state == SLEEPING) {
         p->state = RUNNABLE;
-	if(SCHEDFLAG == FRR)
-		addQ(p);
+	if(SCHEDFLAG == FRR){
+		cprintf("9");
+		addQ(p);}
       }
       release(&ptable.lock);
       return 0;
