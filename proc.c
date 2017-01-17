@@ -422,7 +422,7 @@ scheduler(void)
 	}
 	release(&ptable.lock);
     	}  
-	else if(SCHEDFLAG == QQQ) 
+	else if(SCHEDFLAG == GRT) 
 	{	
 		struct proc *minProc;
 		double mn = 100000000;

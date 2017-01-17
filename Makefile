@@ -176,6 +176,7 @@ UPROGS=\
 	_getPerformanceData\
 	_getppid\
 	_rrsanity\
+	_gsanity\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

@@ -115,7 +115,7 @@ sys_frrsanity(void)
 }*/
 
 int 
-sys_grtsanity(void)
+sys_gsanity(void)
 {
 	return 0;
 }

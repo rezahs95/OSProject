@@ -27,7 +27,7 @@ int sleep(int);
 int uptime(void);
 int rrsanity(void);
 //int frrsanity(void);
-int grtsanity(void);
+int gsanity(void);
 //int sanity(void);
 //int nice(void);
 

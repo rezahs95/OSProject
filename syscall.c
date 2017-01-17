@@ -101,7 +101,7 @@ extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_rrsanity(void);
 extern int sys_frrsanity(void);
-extern int sys_grtsanity(void);
+extern int sys_gsanity(void);
 extern int sys_sanity(void);
 
 static int (*syscalls[])(void) = {
@@ -129,7 +129,7 @@ static int (*syscalls[])(void) = {
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
 [SYS_rrsanity] sys_rrsanity,
-[SYS_grtsanity] sys_grtsanity,
+[SYS_gsanity] sys_gsanity,
 };
 
 void
