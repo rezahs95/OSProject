@@ -10,13 +10,7 @@
 int
 sys_getPerformanceData(void)
 {
-  char *wtime;
-  char *rtime;
-  argstr(0,&wtime);
-  argstr(1,&rtime);
-  *rtime=proc->rtime;
-  *wtime=ticks-proc->ctime-proc->rtime;
-  return 0 ;
+	return wait2();
 }
 int
 sys_fork(void)
@@ -108,3 +102,26 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+int 
+sys_rrsanity(void)
+{
+	return 0;
+}
+
+/*int 
+sys_frrsanity(void)
+{
+	return 0;
+}*/
+
+int 
+sys_grtsanity(void)
+{
+	return 0;
+}
+
+/*int 
+sys_sanity(void)
+{
+	return 0;
+}*/

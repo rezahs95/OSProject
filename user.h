@@ -25,6 +25,11 @@ int getppid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int rrsanity(void);
+//int frrsanity(void);
+int grtsanity(void);
+//int sanity(void);
+//int nice(void);
 
 // ulib.c
 int stat(char*, struct stat*);
