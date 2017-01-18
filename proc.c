@@ -166,7 +166,7 @@ userinit(void)
   if(SCHEDFLAG == FRR)	{
 	addQ(p);
 
-	cprintf("3");}
+	printQ();}
   release(&ptable.lock);
 }
 
@@ -349,6 +349,7 @@ void
 scheduler(void)
 {
   struct proc *p;
+	flag = 0;
 
   for(;;){
     // Enable interrupts on this processor.
@@ -404,7 +405,8 @@ scheduler(void)
 	}
 	else if(SCHEDFLAG == FRR)
 	{
-		cprintf("%d\n", getSize());
+		//cprintf("%d\n", getSize());
+		//printQ();
     		acquire(&ptable.lock);
     		for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       			if(p->state != RUNNABLE)
@@ -416,6 +418,8 @@ scheduler(void)
 	      proc = p;
 	      switchuvm(p);
 	      p->state = RUNNING;
+		if(flag)
+			printQ();		
 		removeQ();
 	      swtch(&cpu->scheduler, p->context);
 	      switchkvm();

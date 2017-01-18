@@ -14,6 +14,6 @@ int main() {
 	else
 		for(i = 0; i < 50; i++)
 			printf(2, "process %d is printing for %d time\n", getpid(), i);
-	 
-	return 0;
+	 wait();
+	exit();
 }

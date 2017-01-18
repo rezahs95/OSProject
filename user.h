@@ -26,10 +26,11 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int rrsanity(void);
-//int frrsanity(void);
+int frrsanity(void);
 int gsanity(void);
 //int sanity(void);
-//int nice(void);
+int nice(void);
+int changeFlag(void);
 
 // ulib.c
 int stat(char*, struct stat*);

@@ -108,15 +108,22 @@ sys_rrsanity(void)
 	return 0;
 }
 
-/*int 
+int 
 sys_frrsanity(void)
 {
 	return 0;
-}*/
+}
 
 int 
 sys_gsanity(void)
 {
+	return 0;
+}
+
+int
+sys_changeFlag(void) 
+{
+	flag = (flag+1) % 2;
 	return 0;
 }
 

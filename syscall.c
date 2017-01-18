@@ -103,6 +103,7 @@ extern int sys_rrsanity(void);
 extern int sys_frrsanity(void);
 extern int sys_gsanity(void);
 extern int sys_sanity(void);
+extern int sys_changeFlag(void);
 
 static int (*syscalls[])(void) = {
 [SYS_getPerformanceData]     sys_getPerformanceData,
@@ -129,7 +130,9 @@ static int (*syscalls[])(void) = {
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
 [SYS_rrsanity] sys_rrsanity,
+[SYS_frrsanity] sys_frrsanity,
 [SYS_gsanity] sys_gsanity,
+[SYS_changeFlag] sys_changeFlag,
 };
 
 void

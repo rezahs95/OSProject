@@ -23,7 +23,8 @@
 #define SYS_getPerformanceData 22
 #define SYS_getppid 23
 #define SYS_rrsanity 24
-//#define SYS_frrsanity 25
+#define SYS_frrsanity 25
 #define SYS_gsanity 26
+#define SYS_changeFlag 27
 //#define SYS_sanity 27
 //#define SYS_nice  28

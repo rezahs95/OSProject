@@ -15,6 +15,7 @@ struct cpu {
 
 extern struct cpu cpus[NCPU];
 extern int ncpu;
+int flag;
 
 // Per-CPU variables, holding pointers to the
 // current cpu and to the current process.

@@ -24,5 +24,8 @@ int main() {
 		getPerformanceData(&wtime, &rtime);
 		printf(1, "Child %d -> wtime: %d, rtime: %d, turnaround time: %d\n", wtime, rtime, wtime + rtime);  
 	}
-	return 0;
+	
+	for(i = 0; i < fork_num; i++)
+		wait();
+	exit();
 }
