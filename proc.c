@@ -404,14 +404,15 @@ scheduler(void)
 	}
 	else if(SCHEDFLAG == FRR)
 	{
+		cprintf("%d\n", getSize());
     		acquire(&ptable.lock);
     		for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       			if(p->state != RUNNABLE)
         			continue;
 
-			if(!isEmpty() && p != getFront())
+			if(isEmpty() || p != getFront())
 				continue;
-
+		
 	      proc = p;
 	      switchuvm(p);
 	      p->state = RUNNING;
@@ -424,8 +425,9 @@ scheduler(void)
     	}  
 	else if(SCHEDFLAG == GRT) 
 	{	
-		struct proc *minProc;
+		struct proc *minProc = ptable.proc;
 		double mn = 100000000;
+    		acquire(&ptable.lock);
 		for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 		{
 			if(p->state != RUNNABLE)
@@ -437,13 +439,16 @@ scheduler(void)
 				minProc = p;
 			}
 		}	
-		
-	      proc = minProc;
-	      switchuvm(minProc);
-	      minProc->state = RUNNING;
-	      swtch(&cpu->scheduler, minProc->context);
-	      switchkvm();
-	      proc = 0;
+	      p = minProc;
+	      if(p->state == RUNNABLE) {
+	      	proc = p;
+	      	switchuvm(p);
+	      	p->state = RUNNING;
+	      	swtch(&cpu->scheduler, p->context);
+	      	switchkvm();
+	      	proc = 0;
+	      }
+    	      release(&ptable.lock);
 		
 	}
     //release(&ptable.lock);
@@ -560,7 +565,6 @@ wakeup1(void *chan)
     if(p->state == SLEEPING && p->chan == chan) {
       p->state = RUNNABLE;
 	if(SCHEDFLAG == FRR){
-		cprintf("yes");
 		addQ(p);}
 	}
 	
